@@ -1,0 +1,329 @@
+{
+  "definitions": {},
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "http://example.com/root.json",
+  "type": "object",
+  "title": "The Root Schema",
+  "required": [
+    "op",
+    "x"
+  ],
+  "properties": {
+    "op": {
+      "$id": "#/properties/op",
+      "type": "string",
+      "title": "The Op Schema",
+      "default": "",
+      "examples": [
+        "utx"
+      ],
+      "pattern": "^(.*)$"
+    },
+    "x": {
+      "$id": "#/properties/x",
+      "type": "object",
+      "title": "The X Schema",
+      "required": [
+        "lock_time",
+        "ver",
+        "size",
+        "inputs",
+        "time",
+        "tx_index",
+        "vin_sz",
+        "hash",
+        "vout_sz",
+        "relayed_by",
+        "out"
+      ],
+      "properties": {
+        "lock_time": {
+          "$id": "#/properties/x/properties/lock_time",
+          "type": "integer",
+          "title": "The Lock_time Schema",
+          "default": 0,
+          "examples": [
+            589167
+          ]
+        },
+        "ver": {
+          "$id": "#/properties/x/properties/ver",
+          "type": "integer",
+          "title": "The Ver Schema",
+          "default": 0,
+          "examples": [
+            2
+          ]
+        },
+        "size": {
+          "$id": "#/properties/x/properties/size",
+          "type": "integer",
+          "title": "The Size Schema",
+          "default": 0,
+          "examples": [
+            223
+          ]
+        },
+        "inputs": {
+          "$id": "#/properties/x/properties/inputs",
+          "type": "array",
+          "title": "The Inputs Schema",
+          "items": {
+            "$id": "#/properties/x/properties/inputs/items",
+            "type": "object",
+            "title": "The Items Schema",
+            "required": [
+              "sequence",
+              "prev_out",
+              "script"
+            ],
+            "properties": {
+              "sequence": {
+                "$id": "#/properties/x/properties/inputs/items/properties/sequence",
+                "type": "integer",
+                "title": "The Sequence Schema",
+                "default": 0,
+                "examples": [
+                  4294967293
+                ]
+              },
+              "prev_out": {
+                "$id": "#/properties/x/properties/inputs/items/properties/prev_out",
+                "type": "object",
+                "title": "The Prev_out Schema",
+                "required": [
+                  "spent",
+                  "tx_index",
+                  "type",
+                  "addr",
+                  "value",
+                  "n",
+                  "script"
+                ],
+                "properties": {
+                  "spent": {
+                    "$id": "#/properties/x/properties/inputs/items/properties/prev_out/properties/spent",
+                    "type": "boolean",
+                    "title": "The Spent Schema",
+                    "default": false,
+                    "examples": [
+                      true
+                    ]
+                  },
+                  "tx_index": {
+                    "$id": "#/properties/x/properties/inputs/items/properties/prev_out/properties/tx_index",
+                    "type": "integer",
+                    "title": "The Tx_index Schema",
+                    "default": 0,
+                    "examples": [
+                      467815293
+                    ]
+                  },
+                  "type": {
+                    "$id": "#/properties/x/properties/inputs/items/properties/prev_out/properties/type",
+                    "type": "integer",
+                    "title": "The Type Schema",
+                    "default": 0,
+                    "examples": [
+                      0
+                    ]
+                  },
+                  "addr": {
+                    "$id": "#/properties/x/properties/inputs/items/properties/prev_out/properties/addr",
+                    "type": "string",
+                    "title": "The Addr Schema",
+                    "default": "",
+                    "examples": [
+                      "1LYfghSB5nXDA3rCJkUspvWadvr8PpX3QC"
+                    ],
+                    "pattern": "^(.*)$"
+                  },
+                  "value": {
+                    "$id": "#/properties/x/properties/inputs/items/properties/prev_out/properties/value",
+                    "type": "integer",
+                    "title": "The Value Schema",
+                    "default": 0,
+                    "examples": [
+                      12719590
+                    ]
+                  },
+                  "n": {
+                    "$id": "#/properties/x/properties/inputs/items/properties/prev_out/properties/n",
+                    "type": "integer",
+                    "title": "The N Schema",
+                    "default": 0,
+                    "examples": [
+                      1
+                    ]
+                  },
+                  "script": {
+                    "$id": "#/properties/x/properties/inputs/items/properties/prev_out/properties/script",
+                    "type": "string",
+                    "title": "The Script Schema",
+                    "default": "",
+                    "examples": [
+                      "76a914d66793ac2ea5aa6f0a0623bcaf61b5a41e4b418e88ac"
+                    ],
+                    "pattern": "^(.*)$"
+                  }
+                }
+              },
+              "script": {
+                "$id": "#/properties/x/properties/inputs/items/properties/script",
+                "type": "string",
+                "title": "The Script Schema",
+                "default": "",
+                "examples": [
+                  "473044022030c401f7929a3638ea26817d1c5ad1fd998b67ab137456a9064718b8a636865c022072205ac922f8bef2db39ca3564aebf69a5c49593e4e4169a01b8ebc9945ef9d60121037da4017cc13e85493c2bd1896430b20673d2db475c94f8bedd09c32c87019f95"
+                ],
+                "pattern": "^(.*)$"
+              }
+            }
+          }
+        },
+        "time": {
+          "$id": "#/properties/x/properties/time",
+          "type": "integer",
+          "title": "The Time Schema",
+          "default": 0,
+          "examples": [
+            1565261134
+          ]
+        },
+        "tx_index": {
+          "$id": "#/properties/x/properties/tx_index",
+          "type": "integer",
+          "title": "The Tx_index Schema",
+          "default": 0,
+          "examples": [
+            477827083
+          ]
+        },
+        "vin_sz": {
+          "$id": "#/properties/x/properties/vin_sz",
+          "type": "integer",
+          "title": "The Vin_sz Schema",
+          "default": 0,
+          "examples": [
+            1
+          ]
+        },
+        "hash": {
+          "$id": "#/properties/x/properties/hash",
+          "type": "string",
+          "title": "The Hash Schema",
+          "default": "",
+          "examples": [
+            "508aa1360e4188d281a592000876b03406b0d63585b24057c5c9f2a607a70175"
+          ],
+          "pattern": "^(.*)$"
+        },
+        "vout_sz": {
+          "$id": "#/properties/x/properties/vout_sz",
+          "type": "integer",
+          "title": "The Vout_sz Schema",
+          "default": 0,
+          "examples": [
+            2
+          ]
+        },
+        "relayed_by": {
+          "$id": "#/properties/x/properties/relayed_by",
+          "type": "string",
+          "title": "The Relayed_by Schema",
+          "default": "",
+          "examples": [
+            "0.0.0.0"
+          ],
+          "pattern": "^(.*)$"
+        },
+        "out": {
+          "$id": "#/properties/x/properties/out",
+          "type": "array",
+          "title": "The Out Schema",
+          "items": {
+            "$id": "#/properties/x/properties/out/items",
+            "type": "object",
+            "title": "The Items Schema",
+            "required": [
+              "spent",
+              "tx_index",
+              "type",
+              "addr",
+              "value",
+              "n",
+              "script"
+            ],
+            "properties": {
+              "spent": {
+                "$id": "#/properties/x/properties/out/items/properties/spent",
+                "type": "boolean",
+                "title": "The Spent Schema",
+                "default": false,
+                "examples": [
+                  false
+                ]
+              },
+              "tx_index": {
+                "$id": "#/properties/x/properties/out/items/properties/tx_index",
+                "type": "integer",
+                "title": "The Tx_index Schema",
+                "default": 0,
+                "examples": [
+                  477827083
+                ]
+              },
+              "type": {
+                "$id": "#/properties/x/properties/out/items/properties/type",
+                "type": "integer",
+                "title": "The Type Schema",
+                "default": 0,
+                "examples": [
+                  0
+                ]
+              },
+              "addr": {
+                "$id": "#/properties/x/properties/out/items/properties/addr",
+                "type": "string",
+                "title": "The Addr Schema",
+                "default": "",
+                "examples": [
+                  "37EMZLwcux8zxrJpqGuV8ZPmR2rmFmwAN6"
+                ],
+                "pattern": "^(.*)$"
+              },
+              "value": {
+                "$id": "#/properties/x/properties/out/items/properties/value",
+                "type": "integer",
+                "title": "The Value Schema",
+                "default": 0,
+                "examples": [
+                  764825
+                ]
+              },
+              "n": {
+                "$id": "#/properties/x/properties/out/items/properties/n",
+                "type": "integer",
+                "title": "The N Schema",
+                "default": 0,
+                "examples": [
+                  0
+                ]
+              },
+              "script": {
+                "$id": "#/properties/x/properties/out/items/properties/script",
+                "type": "string",
+                "title": "The Script Schema",
+                "default": "",
+                "examples": [
+                  "a9143cc5e9ee0122b15b9e91fba427dc5433390d828187"
+                ],
+                "pattern": "^(.*)$"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
