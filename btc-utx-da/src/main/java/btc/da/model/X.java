@@ -33,7 +33,7 @@ public class X implements Serializable
     @SerializedName("lock_time")
     @Expose
     @NotNull
-    private Integer lockTime = 0;
+    private Long lockTime = 0L;
     /**
      * The Ver Schema
      * <p>
@@ -44,7 +44,7 @@ public class X implements Serializable
     @SerializedName("ver")
     @Expose
     @NotNull
-    private Integer ver = 0;
+    private Long ver = 0L;
     /**
      * The Size Schema
      * <p>
@@ -55,7 +55,7 @@ public class X implements Serializable
     @SerializedName("size")
     @Expose
     @NotNull
-    private Integer size = 0;
+    private Long size = 0L;
     /**
      * The Inputs Schema
      * <p>
@@ -78,7 +78,7 @@ public class X implements Serializable
     @SerializedName("time")
     @Expose
     @NotNull
-    private Integer time = 0;
+    private Long time = 0L;
     /**
      * The Tx_index Schema
      * <p>
@@ -89,7 +89,7 @@ public class X implements Serializable
     @SerializedName("tx_index")
     @Expose
     @NotNull
-    private Integer txIndex = 0;
+    private Long txIndex = 0L;
     /**
      * The Vin_sz Schema
      * <p>
@@ -100,7 +100,7 @@ public class X implements Serializable
     @SerializedName("vin_sz")
     @Expose
     @NotNull
-    private Integer vinSz = 0;
+    private Long vinSz = 0L;
     /**
      * The Hash Schema
      * <p>
@@ -123,7 +123,7 @@ public class X implements Serializable
     @SerializedName("vout_sz")
     @Expose
     @NotNull
-    private Integer voutSz = 0;
+    private Long voutSz = 0L;
     /**
      * The Relayed_by Schema
      * <p>
@@ -157,7 +157,7 @@ public class X implements Serializable
      * (Required)
      * 
      */
-    public Integer getLockTime() {
+    public Long getLockTime() {
         return lockTime;
     }
 
@@ -168,7 +168,7 @@ public class X implements Serializable
      * (Required)
      * 
      */
-    public void setLockTime(Integer lockTime) {
+    public void setLockTime(Long lockTime) {
         this.lockTime = lockTime;
     }
 
@@ -179,7 +179,7 @@ public class X implements Serializable
      * (Required)
      * 
      */
-    public Integer getVer() {
+    public Long getVer() {
         return ver;
     }
 
@@ -190,7 +190,7 @@ public class X implements Serializable
      * (Required)
      * 
      */
-    public void setVer(Integer ver) {
+    public void setVer(Long ver) {
         this.ver = ver;
     }
 
@@ -201,7 +201,7 @@ public class X implements Serializable
      * (Required)
      * 
      */
-    public Integer getSize() {
+    public Long getSize() {
         return size;
     }
 
@@ -212,7 +212,7 @@ public class X implements Serializable
      * (Required)
      * 
      */
-    public void setSize(Integer size) {
+    public void setSize(Long size) {
         this.size = size;
     }
 
@@ -245,7 +245,7 @@ public class X implements Serializable
      * (Required)
      * 
      */
-    public Integer getTime() {
+    public Long getTime() {
         return time;
     }
 
@@ -256,7 +256,7 @@ public class X implements Serializable
      * (Required)
      * 
      */
-    public void setTime(Integer time) {
+    public void setTime(Long time) {
         this.time = time;
     }
 
@@ -267,7 +267,7 @@ public class X implements Serializable
      * (Required)
      * 
      */
-    public Integer getTxIndex() {
+    public Long getTxIndex() {
         return txIndex;
     }
 
@@ -278,7 +278,7 @@ public class X implements Serializable
      * (Required)
      * 
      */
-    public void setTxIndex(Integer txIndex) {
+    public void setTxIndex(Long txIndex) {
         this.txIndex = txIndex;
     }
 
@@ -289,7 +289,7 @@ public class X implements Serializable
      * (Required)
      * 
      */
-    public Integer getVinSz() {
+    public Long getVinSz() {
         return vinSz;
     }
 
@@ -300,7 +300,7 @@ public class X implements Serializable
      * (Required)
      * 
      */
-    public void setVinSz(Integer vinSz) {
+    public void setVinSz(Long vinSz) {
         this.vinSz = vinSz;
     }
 
@@ -333,7 +333,7 @@ public class X implements Serializable
      * (Required)
      * 
      */
-    public Integer getVoutSz() {
+    public Long getVoutSz() {
         return voutSz;
     }
 
@@ -344,7 +344,7 @@ public class X implements Serializable
      * (Required)
      * 
      */
-    public void setVoutSz(Integer voutSz) {
+    public void setVoutSz(Long voutSz) {
         this.voutSz = voutSz;
     }
 

@@ -19,36 +19,25 @@
 package btc.da;
 
 import btc.da.model.UTX;
-import org.apache.avro.Schema;
-import org.apache.avro.io.DatumReader;
-import org.apache.avro.io.Decoder;
-import org.apache.avro.io.DecoderFactory;
-import org.apache.avro.reflect.ReflectData;
-import org.apache.avro.reflect.ReflectDatumReader;
-import org.apache.flink.api.common.functions.AggregateFunction;
-import org.apache.flink.api.common.functions.FoldFunction;
-import org.apache.flink.api.common.serialization.DeserializationSchema;
-import org.apache.flink.api.common.serialization.SimpleStringSchema;
-import org.apache.flink.api.common.typeinfo.PrimitiveArrayTypeInfo;
-import org.apache.flink.api.common.typeinfo.TypeInformation;
-import org.apache.flink.api.common.typeinfo.Types;
-import org.apache.flink.api.java.aggregation.Aggregations;
 import org.apache.flink.api.java.functions.KeySelector;
-import org.apache.flink.api.java.tuple.Tuple2;
+import org.apache.flink.runtime.io.network.DataExchangeModeTest;
+import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.api.functions.ProcessFunction;
-import org.apache.flink.streaming.api.functions.aggregation.AggregationFunction;
+import org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrdernessTimestampExtractor;
+import org.apache.flink.streaming.api.functions.windowing.ProcessWindowFunction;
 import org.apache.flink.streaming.api.windowing.time.Time;
+import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer;
 import org.apache.flink.util.Collector;
 
-import java.io.IOException;
+import javax.xml.crypto.Data;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Date;
 import java.util.Properties;
-
-import static btc.da.BTCAmmountTags.tag;
-import static btc.da.BTCSatoshi.toBtc;
 
 /**
  * Skeleton for a Flink Streaming Job.
@@ -67,128 +56,84 @@ public class StreamingJob {
     public static void main(String[] args) throws Exception {
         // set up the streaming execution environment
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        env.setParallelism(10);
+        env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
 
         Properties properties = new Properties();
         properties.setProperty("bootstrap.servers", "localhost:9092");
-// only required for Kafka 0.8
+        // only required for Kafka 0.8
         properties.setProperty("zookeeper.connect", "localhost:2181");
-//		properties.setProperty("group.id", "test");
-        DataStream<byte[]> utxDs = env.addSource(new FlinkKafkaConsumer("utx", new DeserializationSchema<byte[]>() {
-            @Override
-            public TypeInformation<byte[]> getProducedType() {
-                return PrimitiveArrayTypeInfo.BYTE_PRIMITIVE_ARRAY_TYPE_INFO;
-            }
+        //properties.setProperty("group.id", "test");
 
-            @Override
-            public byte[] deserialize(byte[] message) throws IOException {
-                return message;
-            }
+        DataStream<byte[]> utxDs = env.addSource(new FlinkKafkaConsumer<>("utx", new ByteDeserializationSchema(), properties));
 
-            @Override
-            public boolean isEndOfStream(byte[] nextElement) {
-                return nextElement == null;
-            }
-        }, properties));
-
-        SingleOutputStreamOperator<UTX> utxSingleOutputStreamOperator = utxDs.process(new ProcessFunction<byte[], UTX>() {
-            @Override
-            public void processElement(byte[] bytes, Context context, Collector<UTX> collector) throws Exception {
-                Schema schema = ReflectData.AllowNull.get().getSchema(UTX.class);
-
-                Decoder decoder = DecoderFactory.get().binaryDecoder(bytes, null);
-                DatumReader<UTX> reader = new ReflectDatumReader<>(schema);
-
-                UTX utx = reader.read(null, decoder);
-                collector.collect(utx);
-            }
-        }).returns(UTX.class);
-        utxSingleOutputStreamOperator.process(new ProcessFunction<UTX, BTCAmountTaggedUTX>() {
-            @Override
-            public void processElement(UTX value, Context ctx, Collector<BTCAmountTaggedUTX> out) throws Exception {
-
-                if (value.getX() != null && value.getX().getOut() != null && value.getX().getOut().size() > 0) {
-                    int tagInt = tag(toBtc(value.getX().getOut().get(0).getValue()));
-                    BTCAmountTaggedUTX btcAmountTaggedUTX = new BTCAmountTaggedUTX();
-                    btcAmountTaggedUTX.setTag(tagInt);
-                    btcAmountTaggedUTX.setUtx(value);
-                    out.collect(btcAmountTaggedUTX);
-                }
-            }
-        })
-                .keyBy((KeySelector<BTCAmountTaggedUTX, Integer>) BTCAmountTaggedUTX::getTag)
-                .timeWindowAll(Time.seconds(5)).aggregate(
-                new AggregateFunction<BTCAmountTaggedUTX, Tuple2<String, Long>, Tuple2<String, Long>>() {
-
-                    @Override
-                    public Tuple2<String, Long> createAccumulator() {
-                        return new Tuple2<>();
-
-                    }
-
-                    @Override
-                    public Tuple2<String, Long> add(BTCAmountTaggedUTX value, Tuple2<String, Long> accumulator) {
-                        if (accumulator.f1 == null)
-                            accumulator.f1 = 1L;
-                        else
-                            accumulator.f1 = accumulator.f1 + 1L;
-                        accumulator.f0 = String.valueOf(value.getTag());
-                        return accumulator;
-                    }
-
-                    @Override
-                    public Tuple2<String, Long> getResult(Tuple2<String, Long> accumulator) {
-                        return accumulator;
-                    }
-
-                    @Override
-                    public Tuple2<String, Long> merge(Tuple2<String, Long> a, Tuple2<String, Long> b) {
-                        a.f1 = a.f1 + 1;
-                        return a;
-                    }
-                }).print();
+        DataStream<UTX> utxSingleOutputStreamOperator = utxDs.map(new BytesToUTXProcessFunction()).returns(UTX.class);
 
 
-//                .fold(new Tuple2<>("", 0L), new FoldFunction<BTCAmountTaggedUTX, Tuple2<? super String, ? super Long>>() {
-//            @Override
-//            public Tuple2<? super String, ? super Long> fold(Tuple2<? super String, ? super Long> accumulator, BTCAmountTaggedUTX value) throws Exception {
-//                accumulator.f0 = String.valueOf(value.getTag());
-//                accumulator.f1 = ((Long) accumulator.f1) + 1L;
-//                return accumulator;
-//            }
-//        }).print();
-//                .fold(new Tuple2<>("", 0L), (FoldFunction<BTCAmountTaggedUTX, Tuple2<? super String, ? super Long>>) (accumulator, value) -> {
-//                    accumulator.f0 = String.valueOf(value.getTag());
-//                    accumulator.f1 = ((Long) accumulator.f1) + 1L;
-//                    return accumulator;
-//                }).print();
-//
+        //UTX clustered by amount and timely analysed per 30 seconds time windows
+        SingleOutputStreamOperator<BTCPerTagInTimeWindow> utx =
+                utxSingleOutputStreamOperator
+                        .assignTimestampsAndWatermarks(new BoundedOutOfOrdernessTimestampExtractor<UTX>(Time.seconds(10)) {
+                            @Override
+                            public long extractTimestamp(UTX element) {
+                                return element.getX().getTime() * 1000;
+                            }
+                        })
 
+                        .process(new UTXBTCAmountTaggedUTXProcessFunction())
 
+                        .keyBy((KeySelector<BTCAmountTaggedUTX, Integer>) BTCAmountTaggedUTX::getTag)
 
+                        .timeWindow(Time.seconds(30))
 
+                        .process(new ProcessWindowFunction<BTCAmountTaggedUTX, BTCPerTagInTimeWindow, Integer, TimeWindow>() {
+                            @Override
+                            public void process(Integer integer,
+                                                Context context,
+                                                Iterable<BTCAmountTaggedUTX> elements,
+                                                Collector<BTCPerTagInTimeWindow> out) {
+                                System.out.print("Function process fires at " + new Date());
+                                Integer i = 0;
 
-        /*
-         * Here, you can start creating your execution plan for Flink.
-         *
-         * Start with getting some data from the environment, like
-         * 	env.readTextFile(textPath);
-         *
-         * then, transform the resulting DataStream<String> using operations
-         * like
-         * 	.filter()
-         * 	.flatMap()
-         * 	.join()
-         * 	.coGroup()
-         *
-         * and many more.
-         * Have a look at the programming guide for the Java API:
-         *
-         * http://flink.apache.org/docs/latest/apis/streaming/index.html
-         *
-         */
+                                for (BTCAmountTaggedUTX u : elements) {
+                                    i++;
+                                }
 
+                                BTCPerTagInTimeWindow b = new BTCPerTagInTimeWindow(context.window().getStart(), context.window().getEnd(), integer, i);
+                                out.collect(b);
+                            }
+                        });
+
+//        .print();
         // execute program
         env.execute("BTC Aggregate ... let's see what happens !!! ");
+    }
+
+
+    public static class BTCPerTagInTimeWindow {
+        Long startTime = 0L;
+        Long endTime = 0L;
+        Integer tag;
+        Integer counter;
+
+
+        public BTCPerTagInTimeWindow(Long startTime, Long endTime, Integer tag, Integer counter) {
+            this.startTime = startTime;
+            this.endTime = endTime;
+            this.tag = tag;
+            this.counter = counter;
+        }
+
+
+        @Override
+        public String toString() {
+            return "BTCPerTagInTimeWindow{" +
+                    "startTime=" + startTime +
+                    ", endTime=" + endTime +
+                    ", tag=" + tag +
+                    ", counter=" + counter +
+                    '}';
+        }
     }
 
     private static UTX parse(byte[] bytes) {

@@ -9,7 +9,7 @@ class SendKafkaMessageConsumerTest {
 
 
 
-    @Test
+//    @Test
     public void testAvroSerialization(){
 
     }

@@ -8,7 +8,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class SerDerTest {
 
 
-    @Test
+//    @Test
 
     public void serializeDeserializeTest() {
         SerDer serDer = new SerDer();

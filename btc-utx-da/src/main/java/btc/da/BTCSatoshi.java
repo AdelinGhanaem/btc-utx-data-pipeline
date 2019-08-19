@@ -16,6 +16,4 @@ public class BTCSatoshi {
         return btc / BTCInSatoshi;
     }
 
-
-
 }
