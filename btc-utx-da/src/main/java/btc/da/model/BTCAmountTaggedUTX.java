@@ -1,6 +1,4 @@
-package btc.da;
-
-import btc.da.model.UTX;
+package btc.da.model;
 
 public class BTCAmountTaggedUTX extends UTX {
 

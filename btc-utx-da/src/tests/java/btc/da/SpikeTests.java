@@ -1,13 +1,11 @@
 package btc.da;
 
-import org.apache.commons.collections.collection.SynchronizedCollection;
 import org.apache.commons.collections.list.SynchronizedList;
 import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.common.state.ValueStateDescriptor;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.api.functions.co.CoFlatMapFunction;
 import org.apache.flink.streaming.api.functions.co.RichCoFlatMapFunction;
 import org.apache.flink.test.util.AbstractTestBase;
 import org.apache.flink.util.Collector;
@@ -79,10 +77,16 @@ public class SpikeTests extends AbstractTestBase {
     @Test
     void name() {
         long l = 1566224634L * 1000;
-        long l2= 1523265822618L;
-        Instant i = Instant.ofEpochMilli(l);
+        long l2 = 1523265822618L;
+        Instant i = Instant.ofEpochMilli(1l);
         System.out.println(LocalDateTime.ofInstant(i, ZoneId.systemDefault()));
 //                System.out.println(new Date(element.getX().getTime()));
         System.out.println();
+    }
+
+
+    @Test
+    public void main() {
+//        System.out.println(5L >> );
     }
 }

@@ -18,26 +18,24 @@
 
 package btc.da;
 
+import btc.da.model.BTCAmountTaggedUTX;
 import btc.da.model.UTX;
+import com.google.gson.Gson;
+import org.apache.flink.api.common.functions.RichMapFunction;
 import org.apache.flink.api.java.functions.KeySelector;
-import org.apache.flink.runtime.io.network.DataExchangeModeTest;
+import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrdernessTimestampExtractor;
-import org.apache.flink.streaming.api.functions.windowing.ProcessWindowFunction;
 import org.apache.flink.streaming.api.windowing.time.Time;
-import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer;
-import org.apache.flink.util.Collector;
 
-import javax.xml.crypto.Data;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.util.Date;
+import java.io.Serializable;
 import java.util.Properties;
+
+import static btc.da.sink.SinkFunctionsFactory.pubSubSink;
 
 /**
  * Skeleton for a Flink Streaming Job.
@@ -53,9 +51,27 @@ import java.util.Properties;
  */
 public class StreamingJob {
 
+    public static final int ACCUMULATION_TIME = 5;
+    public static final int MAX_DELAY = 10;
+
+    public static final Gson GSON = new Gson();
+
     public static void main(String[] args) throws Exception {
+
+
+        if (args.length < 3) {
+            System.out.println("Usage java -jar btc-utx-da-0.1 google_project_id topic_id config_file_path");
+            return;
+        }
+
+        boolean d = false;
+
+        if (args.length > 3)
+            d = Boolean.valueOf(args[3]);
+
+
         // set up the streaming execution environment
-        final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        final StreamExecutionEnvironment env = StreamExecutionEnvironment.createLocalEnvironment(3);
         env.setParallelism(10);
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
 
@@ -65,65 +81,77 @@ public class StreamingJob {
         properties.setProperty("zookeeper.connect", "localhost:2181");
         //properties.setProperty("group.id", "test");
 
-        DataStream<byte[]> utxDs = env.addSource(new FlinkKafkaConsumer<>("utx", new ByteDeserializationSchema(), properties));
+        DataStream<byte[]> utxDs = env.addSource(new FlinkKafkaConsumer<>("utx",
+                new ByteDeserializationSchema(), properties));
 
-        DataStream<UTX> utxSingleOutputStreamOperator = utxDs.map(new BytesToUTXProcessFunction()).returns(UTX.class);
+        DataStream<UTX> utxSingleOutputStreamOperator =
+                utxDs.map(new BytesToUTXProcessFunction()).returns(UTX.class);
 
-
-        //UTX clustered by amount and timely analysed per 30 seconds time windows
         SingleOutputStreamOperator<BTCPerTagInTimeWindow> utx =
-                utxSingleOutputStreamOperator
-                        .assignTimestampsAndWatermarks(new BoundedOutOfOrdernessTimestampExtractor<UTX>(Time.seconds(10)) {
+                utxClusteredByAmountPipeline(utxSingleOutputStreamOperator, ACCUMULATION_TIME, MAX_DELAY, d);
+
+
+        SingleOutputStreamOperator<String> json =
+                utx.map(new RichMapFunction<BTCPerTagInTimeWindow, String>() {
+
+                            private transient Gson gson;
+
                             @Override
-                            public long extractTimestamp(UTX element) {
-                                return element.getX().getTime() * 1000;
+                            public String map(BTCPerTagInTimeWindow value) throws Exception {
+                                return gson.toJson(value);
                             }
-                        })
 
-                        .process(new UTXBTCAmountTaggedUTXProcessFunction())
-
-                        .keyBy((KeySelector<BTCAmountTaggedUTX, Integer>) BTCAmountTaggedUTX::getTag)
-
-                        .timeWindow(Time.seconds(30))
-
-                        .process(new ProcessWindowFunction<BTCAmountTaggedUTX, BTCPerTagInTimeWindow, Integer, TimeWindow>() {
                             @Override
-                            public void process(Integer integer,
-                                                Context context,
-                                                Iterable<BTCAmountTaggedUTX> elements,
-                                                Collector<BTCPerTagInTimeWindow> out) {
-                                System.out.print("Function process fires at " + new Date());
-                                Integer i = 0;
-
-                                for (BTCAmountTaggedUTX u : elements) {
-                                    i++;
-                                }
-
-                                BTCPerTagInTimeWindow b = new BTCPerTagInTimeWindow(context.window().getStart(), context.window().getEnd(), integer, i);
-                                out.collect(b);
+                            public void open(Configuration parameters) throws Exception {
+                                super.open(parameters);
+                                gson = new Gson();
                             }
-                        });
+                        }
+                );
 
-//        .print();
-        // execute program
-        env.execute("BTC Aggregate ... let's see what happens !!! ");
+        json.addSink(pubSubSink(args[0], args[1], args[2]));
+
+        env.execute("BTC Aggregate ... let's see what happens !");
+    }
+
+    public static SingleOutputStreamOperator<BTCPerTagInTimeWindow> utxClusteredByAmountPipeline(DataStream<UTX> dataStream, int accumulationTime, final int seconds, boolean debug) {
+        //UTX clustered by amount and timely analysed per 30 seconds time windows
+        return dataStream
+                .assignTimestampsAndWatermarks(new BoundedOutOfOrdernessTimestampExtractor<UTX>(Time.seconds(seconds)) {
+                    @Override
+                    public long extractTimestamp(UTX element) {
+                        // convert the element to milliseconds
+                        return element.getX().getTime() * 1000;
+                    }
+                })
+                .process(new UTXBTCAmountTaggedUTXProcessFunction(debug))
+                .keyBy((KeySelector<BTCAmountTaggedUTX, Integer>) BTCAmountTaggedUTX::getTag)
+                .timeWindow(Time.seconds(accumulationTime))
+                .process(new UTXAccumulator(debug));
     }
 
 
-    public static class BTCPerTagInTimeWindow {
+    public static class BTCPerTagInTimeWindow implements Serializable {
         Long startTime = 0L;
         Long endTime = 0L;
         Integer tag;
+        Long amount;
         Integer counter;
 
-
-        public BTCPerTagInTimeWindow(Long startTime, Long endTime, Integer tag, Integer counter) {
+        public BTCPerTagInTimeWindow(Long startTime,
+                                     Long endTime,
+                                     Integer tag,
+                                     Integer counter, Long amount) {
             this.startTime = startTime;
             this.endTime = endTime;
             this.tag = tag;
             this.counter = counter;
+            this.amount = amount;
         }
 
+
+        public BTCPerTagInTimeWindow() {
+        }
 
         @Override
         public String toString() {

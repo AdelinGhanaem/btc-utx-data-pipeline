@@ -2,7 +2,6 @@ package com.btc.transactions.reader.btctransactionsreader.serialization;
 
 import example.avro.User;
 import org.apache.avro.file.DataFileWriter;
-import org.apache.avro.io.DatumWriter;
 import org.apache.avro.specific.SpecificDatumWriter;
 
 import java.io.File;
@@ -37,9 +36,6 @@ public class Main {
         dataFileWriter.append(user2);
         dataFileWriter.append(user3);
         dataFileWriter.close();
-
-
-
 
     }
 

@@ -8,12 +8,8 @@ import org.apache.avro.io.DecoderFactory;
 import org.apache.avro.reflect.ReflectData;
 import org.apache.avro.reflect.ReflectDatumReader;
 import org.apache.flink.api.common.functions.MapFunction;
-import org.apache.flink.streaming.api.functions.ProcessFunction;
-import org.apache.flink.util.Collector;
 
 class BytesToUTXProcessFunction implements MapFunction<byte[], UTX> {
-
-
 
     @Override
     public UTX map(byte[] value) throws Exception {

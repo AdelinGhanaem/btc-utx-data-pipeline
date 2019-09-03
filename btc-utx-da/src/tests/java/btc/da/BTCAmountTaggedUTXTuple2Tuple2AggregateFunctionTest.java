@@ -1,11 +1,12 @@
 package btc.da;
 
+import btc.da.model.BTCAmountTaggedUTX;
 import btc.da.model.UTX;
+import btc.da.model.X;
 import org.apache.flink.api.java.functions.KeySelector;
 import org.apache.flink.core.fs.FileSystem;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
-import org.apache.flink.streaming.api.datastream.KeyedStream;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.AssignerWithPeriodicWatermarks;
@@ -23,7 +24,9 @@ import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 
 import javax.annotation.Nullable;
-import java.time.*;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -41,21 +44,6 @@ public class BTCAmountTaggedUTXTuple2Tuple2AggregateFunctionTest {
 
         CollectSink.values.clear();
         SingleOutputStreamOperator<BTCAmountTaggedUTX> ds =
-
-                // here we can play with time stamps and watermarks ...
-//                env.fromElements(create(1), create(2), create(2), create(2), create(3)).assignTimestampsAndWatermarks(new AssignerWithPeriodicWatermarks<BTCAmountTaggedUTX>() {
-//
-//                    @Nullable
-//                    @Override
-//                    public Watermark getCurrentWatermark() {
-//                        return new Watermark(System.currentTimeMillis());
-//                    }
-//
-//                    @Override
-//                    public long extractTimestamp(BTCAmountTaggedUTX element, long previousElementTimestamp) {
-//                        return System.currentTimeMillis();
-//                    }
-//                });
                 env.fromElements(
                         create(1),
                         create(2),
@@ -64,9 +52,9 @@ public class BTCAmountTaggedUTXTuple2Tuple2AggregateFunctionTest {
                         create(3));
 
         ds.keyBy((KeySelector<BTCAmountTaggedUTX, Integer>) BTCAmountTaggedUTX::getTag)
-                .timeWindowAll(Time.seconds(1))
-                .aggregate(new MapAccumulator())
-                .addSink(new CollectSink());
+                .timeWindowAll(Time.seconds(1));
+//                .aggregate(new MapAccumulator())
+//                .addSink(new CollectSink());
 
         ds.writeAsText("./result.txt", FileSystem.WriteMode.OVERWRITE);
 
@@ -79,7 +67,6 @@ public class BTCAmountTaggedUTXTuple2Tuple2AggregateFunctionTest {
         assert integerMap.get(String.valueOf(2)) == 3;
         assert integerMap.get(String.valueOf(3)) == 1;
         CollectSink.values.forEach(System.out::println);
-
     }
 
 
@@ -190,10 +177,7 @@ public class BTCAmountTaggedUTXTuple2Tuple2AggregateFunctionTest {
 
 
             }
-        })
-
-//                .process(collectAndSort())
-                .addSink(getSinkFunction());
+        }).addSink(getSinkFunction());
 
         env.execute();
 
@@ -202,6 +186,36 @@ public class BTCAmountTaggedUTXTuple2Tuple2AggregateFunctionTest {
 
         CollectSink.values.forEach(System.out::println);
     }
+
+
+    @Test
+    public void playingWithParquet() throws Exception {
+
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        env.setParallelism(1);
+        env.setBufferTimeout(0);
+        env.setStreamTimeCharacteristic(TimeCharacteristic.IngestionTime);
+
+        DataStreamSource<UTX> u = null;
+        for (int i = 0; i < 100; i++) {
+            u = env.fromElements(create(i));
+        }
+
+        u.process(new ProcessFunction<UTX, UTX>() {
+            @Override
+            public void processElement(UTX value, Context ctx, Collector<UTX> out) {
+                UTX u = new UTX();
+                u.setX(new X());
+                u.getX().setLockTime(new Date().getTime());
+                u.getX().setSize(1L);
+                u.getX().setRelayedBy("Some Random Value" + UUID.randomUUID());
+                out.collect(u);
+            }
+        });
+//                .addSink(new ParquetRichSinkFunction<>(UTX.class, "file://" + "/Users/aghan/workspace/btc-transactions-pipeline/btc-utx-da/data/"));
+        env.execute();
+    }
+
 
     private static long now(int seconds) {
 
@@ -216,9 +230,7 @@ public class BTCAmountTaggedUTXTuple2Tuple2AggregateFunctionTest {
             public void process(Integer integer, Context context, Iterable<BTCAmountTaggedUTX> elements, Collector<List<Integer>> out) throws Exception {
                 List<Integer> l = StreamSupport.stream(elements.spliterator(), false)
                         .map(BTCAmountTaggedUTX::getTag).collect(Collectors.toList());
-
                 Collections.sort(l);
-
                 out.collect(l);
             }
         };
@@ -275,7 +287,7 @@ public class BTCAmountTaggedUTXTuple2Tuple2AggregateFunctionTest {
         return utx;
     }
 
-    private static BTCAmountTaggedUTX create(int tag) {
+    public static BTCAmountTaggedUTX create(int tag) {
         return create(tag, 0);
     }
 }

@@ -1,4 +1,4 @@
-package btc.da;
+package btc.da.model;
 
 public class BTCAmmountTags {
 

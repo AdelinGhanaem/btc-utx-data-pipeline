@@ -4,8 +4,11 @@ import org.apache.flink.api.common.serialization.DeserializationSchema;
 import org.apache.flink.api.common.typeinfo.PrimitiveArrayTypeInfo;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 
-import java.io.IOException;
-
+/**
+ * Needed for FlinkKafkaConsumer this "DeserializationSchema"
+ * passes the bytes as is, as there is a process function that is responsible for converting avro byte format to
+ * DTOs.
+ */
 class ByteDeserializationSchema implements DeserializationSchema<byte[]> {
     @Override
     public TypeInformation<byte[]> getProducedType() {
@@ -13,10 +16,9 @@ class ByteDeserializationSchema implements DeserializationSchema<byte[]> {
     }
 
     @Override
-    public byte[] deserialize(byte[] message) throws IOException {
+    public byte[] deserialize(byte[] message) {
         return message;
     }
-
     @Override
     public boolean isEndOfStream(byte[] nextElement) {
         return nextElement == null;
